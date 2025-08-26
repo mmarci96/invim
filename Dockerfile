@@ -3,7 +3,7 @@ FROM  docker.io/fedora:latest
 # Install base dependencies
 RUN dnf upgrade -y && dnf install -y dnf-plugins-core 
 RUN dnf install -y \
-    bash curl git unzip wget \
+    bash curl git unzip wget rsync \
     make automake gcc gcc-c++ kernel-devel \
     cmake ninja-build tree-sitter \
     gettext gettext-devel \
@@ -20,14 +20,18 @@ WORKDIR /tmp/neovim
 RUN make CMAKE_BUILD_TYPE=Release CMAKE_INSTALL_PREFIX=/root/.local && \
     make install && rm -rf /tmp/neovim
 
-WORKDIR /root
 # NvChad for base configuration from git
+WORKDIR /root
 RUN git clone https://github.com/NvChad/starter ~/.config/nvim 
+COPY ./config/nvim/ /root/.config/nvim
+RUN nvim --headless "+Lazy! sync" +qa
+RUN nvim --headless "+MasonInstallAll" +qa
+RUN nvim --headless "+MasonUpdate" +qa
 
+# Container entrpoint
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# COPY ./config/nvim/ /root/.config/nvim
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
